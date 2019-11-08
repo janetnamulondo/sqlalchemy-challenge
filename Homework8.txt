@@ -1,0 +1,30 @@
+# Calculate the date 1 year ago from the last data point in the database
+#Defining a variable for the last date in the data base will help us to query back 12months. 
+lastdate= dt.date(2017,8,23) - dt.timedelta(days=365)
+print(lastdate)
+
+# Perform a query to retrieve the data and precipitation scores. We call prcp and date, then filter by date, passing in the variable
+#we created above, to give us a point of reference for our data.
+results = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= lastdate).all()
+results
+
+#create a dataframe for the data
+# Load the results into a pandas dataframe. Set the index to the `date`. Loading into data frame allows us to plot using 
+#matplotlib. 
+prcp_df = pd.DataFrame(results, columns=['date', 'precipitation'])
+prcp_df.set_index('date', inplace=True, )
+prcp_df.head(10)
+
+# Sort the dataframe by date
+prcpsorted_df = prcp_df.sort_values("date", ascending=False)
+prcpsorted_df.head()
+
+# # Use Pandas Plotting with Matplotlib to plot the data
+# # Use DataFrame.plot() in order to create a bar chart of the data
+prcpsorted_df.plot(kind="bar", figsize=(20,6))
+
+# # Set a title for the chart
+plt.title("Precipitation per Day")
+
+plt.show()
+
