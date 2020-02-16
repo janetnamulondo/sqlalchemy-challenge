@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-#import sqlalchemy
+import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, func
 #################################################
 # Database Setup
 #################################################
-engine = create_engine("sqlite:///hawaii.sqlite")
+engine = create_engine("sqlite:///../Resources/2-hawaii.sqlite")
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -35,14 +35,16 @@ app = Flask(__name__)
 @app.route("/")
 def Welcome():
     print("Server received request for 'Home' page...")
+
     """List all available API routes."""
     return (
-        f"Welcome to the Hawaii Climate API Home Page"
-        f"/api/v1.0/precipitation"
-        f"/api/v1.0/stations"
-        f"/api/v1.0/tobs"
-        f"/api/v1.0/<start>"
-        f"/api/v1.0/<start>/<end>")
+        f"Welcome to the Hawaii Climate API Home Page.<br/>"
+        f"These are the available routes<br/>"
+        f"/api/v1.0/precipitation<br/>"
+        f"/api/v1.0/stations<br/>"
+        f"/api/v1.0/tobs<br/>"
+        f"/api/v1.0/start<br/>"
+        f"/api/v1.0/start/end")
 
 # #Define what to do when a user hits the /precipitation route
 @app.route("/api/v1.0/precipitation")
@@ -55,10 +57,10 @@ def precipitation():
 
 # Create a dictionary from the row data and append to a list of all_measurements
     all_measurements = []
-    for date,prcp in results:
+    for date, prcp in results:
         measurement_dict = {}
-        measurement_dict["date"] 
-        measurement_dict["prcp"] 
+        measurement_dict["date"] = date
+        measurement_dict["prcp"] = prcp 
         all_measurements.append(measurement_dict)
 
 #Return the JSON representation of your dictionary.
@@ -66,7 +68,7 @@ def precipitation():
 
 @app.route("/api/v1.0/stations")
 def station():
-     print("Server received request for 'stations' page...")
+    print("Server received request for 'stations' page...")
 #Return a JSON list of stations from the dataset.
     results = session.query(Station.name, Station.station).all()
     session.close()
@@ -82,8 +84,8 @@ def station():
     return jsonify(all_stations)
 
 @app.route("/api/v1.0/tobs")
-def station():
-     print("Server received request for 'tobs' page...")
+def tobs():
+    print("Server received request for 'tobs' page...")
 
 #query for the dates and temperature observations from a year from the last data point.
 #Create variable for date to query with. 
@@ -105,12 +107,14 @@ def station():
     return jsonify(all_tobs)
 
 @app.route("/api/v1.0/<start>")
-def start():
-     print("Server received request for 'start_date' page...")
+def start(start = None):
+    print("Server received request for 'start_date' page...")
 
 #Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range.
 #Given start_date only 
-    start_date= dt.date(2017,3,15) - dt.timedelta(days=365)
+    year,month,day = start.split("-")
+    start_date= dt.date(2017,8,23) - dt.timedelta(days=365)
+    #start_date = dt.date(start) - dt.timedelta(days=365)
 
 #Query temperatures for all dates equal or greater than start_date
     results = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
@@ -122,15 +126,23 @@ def start():
 #Convert to json file 
     return jsonify(tobs_stats)
 
+@app.route("/api/v1.0/<start>/<end>")
+def start_end(start = None, end = None):
+    print("Server received request for 'start_date and end_data' page...")
 #Given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive
-    start_date = dt.date(2017,3,15) - dt.timedelta(days=365)
-    end_date = dt.date(2017,4,15) - dt.timedelta(days=365)
+#Start_Date
+    year,month,day = start.split("-")
+    start_date= dt.date(2017,8,23) - dt.timedelta(days=365)
+#End_Date
+    year,month,day = end.split("-")
+    # end_date= dt.date(int(year), int(month), int(day)) - dt.timedelta(days=365)
+    end_date = dt.date(2018,8,23) - dt.timedelta(days=365)
 #Query for tmin, tmax and Average temperatures
     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
     filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all()
     session.close()
 #convert into a list before jsonfying 
-     start_end_stats = list(np.ravel(results))
+    start_end_stats = list(np.ravel(results))
     #tmin, tavg, tmax = calc_temps(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))[0]
 
 #Convert to json file 
